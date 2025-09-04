@@ -174,6 +174,33 @@ func urlToFilename(rawURL string) string {
 	return safe // Return sanitized filename
 }
 
+// Converts a raw URL into a sanitized PNG filename safe for filesystem
+func urlToPNGFilename(rawURL string) string {
+	lower := strings.ToLower(rawURL) // Convert URL to lowercase
+	lower = getFilename(lower)       // Extract filename from URL
+
+	reNonAlnum := regexp.MustCompile(`[^a-z0-9]`)   // Regex to match non-alphanumeric characters
+	safe := reNonAlnum.ReplaceAllString(lower, "_") // Replace non-alphanumeric with underscores
+
+	safe = regexp.MustCompile(`_+`).ReplaceAllString(safe, "_") // Collapse multiple underscores into one
+	safe = strings.Trim(safe, "_")                              // Trim leading and trailing underscores
+
+	var invalidSubstrings = []string{
+		"_png", // Substring to remove from filename
+	}
+
+	for _, invalidPre := range invalidSubstrings { // Remove unwanted substrings
+		safe = removeSubstring(safe, invalidPre)
+	}
+
+	if getFileExtension(safe) != ".png" { // Ensure file ends with .png
+		safe = safe + ".png"
+	}
+
+	return safe // Return sanitized filename
+}
+
+
 // Downloads a PDF from given URL and saves it in the specified directory
 func downloadPDF(finalURL, outputDir string) bool {
 	filename := strings.ToLower(urlToFilename(finalURL)) // Sanitize the filename
@@ -339,7 +366,7 @@ func extractBaseDomain(inputUrl string) string {
 
 // Downloads a PNG from given URL and saves it in the specified directory
 func downloadPNG(finalURL, outputDir string) bool {
-	filename := strings.ToLower(urlToFilename(finalURL)) // Sanitize the filename
+	filename := strings.ToLower(urlToPNGFilename(finalURL)) // Sanitize the filename
 	if !strings.HasSuffix(filename, ".png") {
 		filename += ".png" // Ensure PNG extension
 	}
